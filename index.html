@@ -1,142 +1,209 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>NSEC Chemistry Prep</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: #f1f5f9;
-      text-align: center;
-      padding: 40px;
-    }
-    h1 { color: #38bdf8; }
-    input, button {
-      padding: 10px;
-      margin: 10px;
-      border-radius: 8px;
-      border: none;
-    }
-    input { width: 250px; }
-    button {
-      background: #38bdf8;
-      color: black;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    .box {
-      margin-top: 20px;
-      padding: 20px;
-      border-radius: 12px;
-      background: #1e293b;
-      display: none;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>NSEC Olympiad Platform</title>
+
+<style>
+body {
+  font-family: Arial;
+  background: #0f172a;
+  color: white;
+  text-align: center;
+  padding: 20px;
+}
+h1 { color: #38bdf8; }
+
+input, button {
+  padding: 10px;
+  margin: 8px;
+  border-radius: 8px;
+  border: none;
+}
+button {
+  background: #38bdf8;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.box {
+  display: none;
+  background: #1e293b;
+  padding: 20px;
+  margin-top: 20px;
+  border-radius: 12px;
+}
+
+.correct { color: lightgreen; }
+.wrong { color: red; }
+</style>
 </head>
 
 <body>
 
-<h1>🧪 NSEC Chemistry Prep</h1>
-<p>Enter a chapter name to start revision</p>
+<h1>🧪 NSEC Olympiad Platform</h1>
 
-<input type="text" id="chapter" placeholder="e.g. Chemical Bonding">
+<input id="name" placeholder="Enter your name">
 <br>
-<button onclick="showConcepts()">Start Revision</button>
+<input id="chapter" placeholder="Enter chapter (e.g. Chemical Bonding)">
+<br>
+<button onclick="startRevision()">Start</button>
 
 <div id="conceptBox" class="box"></div>
 <div id="confirmBox" class="box"></div>
-<div id="practiceBox" class="box"></div>
+<div id="testBox" class="box"></div>
+<div id="resultBox" class="box"></div>
+<div id="leaderboardBox" class="box"></div>
 
 <script>
-function showConcepts() {
+
+let score = 0;
+let timeLeft = 60;
+let timer;
+
+const concepts = {
+  "Chemical Bonding": [
+    "VSEPR Theory",
+    "Hybridization",
+    "MOT",
+    "Bond Polarity"
+  ],
+  "Thermodynamics": [
+    "First Law",
+    "Entropy",
+    "Gibbs Energy"
+  ]
+};
+
+const questions = [
+  {
+    type: "mcq",
+    q: "Hybridization of CH4?",
+    options: ["sp", "sp2", "sp3", "dsp2"],
+    answer: "sp3"
+  },
+  {
+    type: "mcq",
+    q: "Which is polar?",
+    options: ["CO2", "H2O", "BF3", "CH4"],
+    answer: "H2O"
+  },
+  {
+    type: "num",
+    q: "pH of neutral solution?",
+    answer: "7"
+  }
+];
+
+function startRevision() {
   const chapter = document.getElementById("chapter").value;
-  if (!chapter) return alert("Enter a chapter!");
+  if (!chapter) return alert("Enter chapter");
 
-  const concepts = {
-    "Chemical Bonding": [
-      "VSEPR Theory",
-      "Hybridization",
-      "Molecular Orbital Theory",
-      "Bond Polarity"
-    ],
-    "Thermodynamics": [
-      "First Law",
-      "Enthalpy",
-      "Entropy",
-      "Gibbs Free Energy"
-    ],
-    "Equilibrium": [
-      "Le Chatelier Principle",
-      "Equilibrium Constant",
-      "pH & Buffers"
-    ]
-  };
-
-  let list = concepts[chapter] || ["Key concepts will be updated soon"];
+  const list = concepts[chapter] || ["Concepts will be added"];
 
   document.getElementById("conceptBox").style.display = "block";
   document.getElementById("conceptBox").innerHTML =
-    "<h2>📚 Important Concepts</h2><ul>" +
-    list.map(c => "<li>" + c + "</li>").join("") +
+    "<h2>📚 Concepts</h2><ul>" +
+    list.map(x => "<li>"+x+"</li>").join("") +
     "</ul>";
 
   document.getElementById("confirmBox").style.display = "block";
   document.getElementById("confirmBox").innerHTML =
-    "<h3>Are you sure you want to move to practice?</h3>" +
-    "<button onclick='startPractice()'>Yes</button>" +
-    "<button onclick='goBack()'>No</button>";
+    "<h3>Are you sure?</h3>" +
+    "<button onclick='startTest()'>Yes</button>" +
+    "<button onclick='alert(\"Revise more!\")'>No</button>";
 }
 
-function goBack() {
-  document.getElementById("practiceBox").style.display = "none";
-  alert("Revise again before practicing!");
-}
+function startTest() {
+  score = 0;
+  timeLeft = 60;
 
-function startPractice() {
-  document.getElementById("practiceBox").style.display = "block";
+  document.getElementById("testBox").style.display = "block";
 
-  const questions = [
-    {
-      q: "Which hybridization is present in CH4?",
-      a: "sp3"
-    },
-    {
-      q: "Which law states energy conservation?",
-      a: "First Law of Thermodynamics"
-    },
-    {
-      q: "pH of neutral solution?",
-      a: "7"
+  timer = setInterval(() => {
+    timeLeft--;
+    document.getElementById("timer").innerText = timeLeft;
+    if (timeLeft <= 0) submitTest();
+  }, 1000);
+
+  let html = "<h2>⚡ Test Mode</h2>";
+  html += "<p>⏱ Time Left: <span id='timer'>60</span>s</p>";
+
+  questions.forEach((q, i) => {
+    html += `<p><b>Q${i+1}:</b> ${q.q}</p>`;
+
+    if (q.type === "mcq") {
+      q.options.forEach(opt => {
+        html += `
+          <label>
+          <input type="radio" name="q${i}" value="${opt}">
+          ${opt}
+          </label><br>`;
+      });
+    } else {
+      html += `<input id="q${i}">`;
     }
-  ];
-
-  let html = "<h2>⚡ Practice Questions</h2>";
-
-  questions.forEach((item, i) => {
-    html += `
-      <p><b>Q${i+1}:</b> ${item.q}</p>
-      <input type="text" id="ans${i}">
-      <button onclick="checkAnswer(${i}, '${item.a}')">Check</button>
-      <p id="result${i}"></p>
-    `;
   });
 
-  document.getElementById("practiceBox").innerHTML = html;
+  html += "<br><button onclick='submitTest()'>Submit</button>";
+
+  document.getElementById("testBox").innerHTML = html;
 }
 
-function checkAnswer(i, correct) {
-  const userAns = document.getElementById("ans" + i).value.toLowerCase();
-  const result = document.getElementById("result" + i);
+function submitTest() {
+  clearInterval(timer);
+  score = 0;
 
-  if (userAns.includes(correct.toLowerCase())) {
-    result.innerHTML = "✅ Correct!";
-    result.style.color = "lightgreen";
-  } else {
-    result.innerHTML = "❌ Incorrect (Ans: " + correct + ")";
-    result.style.color = "red";
-  }
+  questions.forEach((q, i) => {
+    let userAns;
+
+    if (q.type === "mcq") {
+      const selected = document.querySelector(`input[name="q${i}"]:checked`);
+      userAns = selected ? selected.value : "";
+    } else {
+      userAns = document.getElementById("q"+i).value;
+    }
+
+    if (userAns.toLowerCase() === q.answer.toLowerCase()) {
+      score++;
+    }
+  });
+
+  showResult();
 }
+
+function showResult() {
+  const name = document.getElementById("name").value || "Anonymous";
+
+  document.getElementById("resultBox").style.display = "block";
+  document.getElementById("resultBox").innerHTML =
+    `<h2>🏆 Score: ${score}/${questions.length}</h2>`;
+
+  saveScore(name, score);
+  showLeaderboard();
+}
+
+function saveScore(name, score) {
+  let data = JSON.parse(localStorage.getItem("leaderboard")) || [];
+  data.push({ name, score });
+
+  data.sort((a,b) => b.score - a.score);
+  localStorage.setItem("leaderboard", JSON.stringify(data.slice(0,10)));
+}
+
+function showLeaderboard() {
+  let data = JSON.parse(localStorage.getItem("leaderboard")) || [];
+
+  document.getElementById("leaderboardBox").style.display = "block";
+
+  let html = "<h2>📊 Leaderboard</h2>";
+  data.forEach((d,i) => {
+    html += `<p>${i+1}. ${d.name} - ${d.score}</p>`;
+  });
+
+  document.getElementById("leaderboardBox").innerHTML = html;
+}
+
 </script>
 
 </body>
